@@ -8,6 +8,5 @@ int main(int argc, char* argv[])
         std::cerr << "You must pass path to .engine file!";
         exit(1);
     }
-    GeneralInferenceEngine engine;
-    engine.deserialize(argv[1]);
+    GeneralInferenceEngine engine(argv[1]);
 }

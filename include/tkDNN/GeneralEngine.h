@@ -26,7 +26,7 @@ class GeneralInferenceEngine {
     nvinfer1::IExecutionContext *contextRT;
 
 public:    
-    GeneralInferenceEngine();
+    GeneralInferenceEngine(const char* weight_path);
     virtual ~GeneralInferenceEngine() {};
 
     int getMaxBatchSize() {
@@ -45,5 +45,5 @@ public:
 
     void enqueue(int batchSize = 1);    
 
-    bool deserialize(const char *filename);
+    void deserialize(const char *filename);
 };

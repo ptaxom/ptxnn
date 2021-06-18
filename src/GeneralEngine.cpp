@@ -32,17 +32,18 @@ std::map<Severity, std::string> SEVERITY_COLORS = {
 
 class EngineLogger : public ILogger {
 
+    std::mutex log_guard;
+
+public:
     void log(Severity severity, const char* msg) override {
         std::lock_guard<std::mutex> guard(log_guard);
         
         std::cout << SEVERITY_COLORS[severity] << msg << "\033[0m" <<  std::endl;
     }
 
-    std::mutex log_guard;
-
 } EngineLogger;
 
-GeneralInferenceEngine::GeneralInferenceEngine()
+GeneralInferenceEngine::GeneralInferenceEngine(const char* weight_path)
 {
     if (!GeneralInferenceEngine::builderRT)
     {
@@ -54,13 +55,16 @@ GeneralInferenceEngine::GeneralInferenceEngine()
         GeneralInferenceEngine::runtimeRT = std::shared_ptr<IRuntime>(createInferRuntime(EngineLogger), TRTDeleter());
         initLibNvInferPlugins(&EngineLogger, "");
     }
+    deserialize(weight_path);
 }
 
-bool GeneralInferenceEngine::deserialize(const char *filename) {
+void GeneralInferenceEngine::deserialize(const char *filename) {
 
     char *gieModelStream{nullptr};
     size_t size{0};
     std::ifstream file(filename, std::ios::binary);
+    std::stringstream info_string;
+
     if (file.good()) {
         file.seekg(0, file.end);
         size = file.tellg();
@@ -69,8 +73,13 @@ bool GeneralInferenceEngine::deserialize(const char *filename) {
         file.read(gieModelStream, size);
         file.close();
     }
+    else
+    {
+        info_string << "Couldn't open file at path " << filename;
+        throw std::runtime_error(info_string.str());
+    }
 
+    info_string << "Loaded engine from " << filename << std::endl;
+    EngineLogger.log(Severity::kINFO, info_string.str().c_str());
     engineRT = runtimeRT->deserializeCudaEngine(gieModelStream, size, (IPluginFactory *) GeneralInferenceEngine::tkPlugins);
-
-    return true;
 }
