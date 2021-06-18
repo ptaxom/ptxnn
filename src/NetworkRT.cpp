@@ -274,7 +274,6 @@ ILayer* NetworkRT::convert_layer(ITensor *input, Dense *l) {
     return lRT;
 }
 
-
 ILayer* NetworkRT::convert_layer(ITensor *input, Conv2d *l) {
     // std::cout<<"convert conv2D\n";
     // printf("%d %d %d %d %d\n", l->kernelH, l->kernelW, l->inputs, l->outputs, l->batchnorm);
@@ -648,7 +647,6 @@ IPlugin* PluginFactory::createPlugin(const char* layerName, const void* serialDa
     const char * buf = reinterpret_cast<const char*>(serialData),*bufCheck = buf;
 
     std::string name(layerName);
-    //std::cout<<name<<std::endl;
 
     if(name.find("ActivationLeaky") == 0) {
         ActivationLeakyRT *a = new ActivationLeakyRT();

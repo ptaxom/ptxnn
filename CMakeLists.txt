@@ -65,3 +65,6 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/cmake/"
 install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/tests/" # source directory
         DESTINATION "share/tkDNN/tests" # target directory
 )
+
+add_executable(general_engine_test tests/ge_test.cpp ${tkdnn_SRC})
+target_link_libraries(general_engine_test ${tkdnn_LIBS} nvinfer_plugin)
