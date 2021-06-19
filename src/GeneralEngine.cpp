@@ -18,20 +18,32 @@ std::map<Severity, std::string> SEVERITY_COLORS = {
 };
 
 
-size_t sample_size(nvinfer1::Dims dim)
+
+size_t GeneralInferenceEngine::binding_size(int index)
+{
+    return binding_size(bindings_dim_[index]);
+}
+
+size_t GeneralInferenceEngine::binding_size(Dims dim)
 {
     size_t size = sizeof(dnnType);
-    for(int i = 1; i < dim.nbDims; i++)
+    int start_id = 1;
+    if (engineRT->hasImplicitBatchDimension())
+    {
+        start_id = 0;
+        size *= engine_batch_size_;
+    }
+    for(int i = start_id; i < dim.nbDims; i++)
         size *= dim.d[i];
     return size;
 }
 
-size_t binding_size(nvinfer1::Dims dim)
+std::ostream& operator<<(std::ostream& os, const nvinfer1::Dims& obj)
 {
-    size_t size = sizeof(dnnType);
-    for(int i = 0; i < dim.nbDims; i++)
-        size *= dim.d[i];
-    return size;
+    for(int i = 0; i < obj.nbDims - 1; i++)
+        os << obj.d[i] << "x";
+    os << obj.d[obj.nbDims - 1];
+    return os;
 }
 
 class EngineLogger : public ILogger {
@@ -58,6 +70,7 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
 {
     if (!GeneralInferenceEngine::builderRT)
     {
+        cudaSetDevice(0);
         std::shared_ptr<nvinfer1::IBuilder> ptr(createInferBuilder(EngineLogger), TRTDeleter());
         GeneralInferenceEngine::builderRT = ptr;
         std::shared_ptr<nvinfer1::IBuilderConfig> ptr2(ptr->createBuilderConfig(), TRTDeleter());
@@ -67,15 +80,19 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
         initLibNvInferPlugins(&EngineLogger, "");
     }
     deserialize(weight_path);
+    engine_batch_size_ = engineRT->hasImplicitBatchDimension() ? engineRT->getMaxBatchSize() : engineRT->getBindingDimensions(0).d[0];
+    EngineLogger.log(Severity::kINFO, "Used batchsize of ", engine_batch_size_);
     
     contextRT = engineRT->createExecutionContext();
     EngineLogger.log(Severity::kINFO, "Created execution context for", model_name_);
+    
 
     int n_inputs = 0;
     for(int i = 0; i < engineRT->getNbBindings(); i++)
     {
         void *device_ptr;
         Dims dim = engineRT->getBindingDimensions(i);
+        std::cout << dim << std::endl;
         size_t current_binding_size = binding_size(dim);
         checkCuda(cudaMalloc(&device_ptr, current_binding_size));
 
@@ -84,7 +101,6 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
             ++n_inputs;
             bindingsRT.insert(bindingsRT.begin(), device_ptr);
             bindings_dim_.insert(bindings_dim_.begin(), dim);
-            engine_batch_size_ = dim.d[0];
         }
         else
         {
@@ -144,17 +160,20 @@ void GeneralInferenceEngine::deserialize(const char *filename) {
 
 void GeneralInferenceEngine::enqueue(){
     checkCuda(cudaMemcpyAsync(bindingsRT[0], input_host_, 
-        binding_size(bindings_dim_[0]), cudaMemcpyHostToDevice, stream_));
+        binding_size(0), cudaMemcpyHostToDevice, stream_));
     
     contextRT->enqueue(engine_batch_size_, bindingsRT.data(), stream_, nullptr);
 
     for(int binding_id = 1; binding_id < engineRT->getNbBindings(); binding_id++)
     {
         checkCuda(cudaMemcpyAsync(outputs_host_[binding_id - 1], bindingsRT[binding_id], 
-           binding_size(bindings_dim_[binding_id]), cudaMemcpyDeviceToHost, stream_));
+           binding_size(binding_id), cudaMemcpyDeviceToHost, stream_));
     }
 }
 
 void GeneralInferenceEngine::synchronize(){
     checkCuda(cudaStreamSynchronize(stream_));
+    // int binding_id = 1;
+    // for(int i = 0; i < binding_size(binding_id) / sizeof(dnnType); i++)
+    //     std::cout << ((dnnType*)outputs_host_[binding_id])[i] << " ";
 }

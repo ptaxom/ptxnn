@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.15)
 project (tkDNN)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 if(UNIX)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC -Wno-deprecated-declarations -Wno-unused-variable ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -Wno-deprecated-declarations -Wno-unused-variable ")
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/tkDNN)
 
@@ -45,6 +45,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOPENCV")
 # gives problems in cross-compiling, probably malformed cmake config
 find_package(yaml-cpp REQUIRED)
 
+# Python bindings
+find_package(Python COMPONENTS Interpreter Development)
+find_package(pybind11 CONFIG)
+include_directories(${pybind11_INCLUDE_DIRS})
+
 #-------------------------------------------------------------------------------
 # Build Libraries
 #-------------------------------------------------------------------------------
@@ -72,3 +77,6 @@ endif()
 
 add_executable(general_engine_test tests/ge_test.cpp ${tkdnn_SRC})
 target_link_libraries(general_engine_test ${tkdnn_LIBS} nvinfer_plugin)
+
+#pybind11_add_module(binding ${tkdnn_SRC})
+#target_link_libraries(binding ${tkdnn_LIBS} nvinfer_plugin)

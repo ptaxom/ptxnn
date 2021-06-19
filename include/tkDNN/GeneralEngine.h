@@ -27,9 +27,11 @@ struct TRTDeleter{
     }
 };
 
-size_t sample_size(nvinfer1::Dims dim);
-size_t binding_size(nvinfer1::Dims dim);
 
+
+std::ostream& operator<<(std::ostream& os, const nvinfer1::Dims& obj);
+
+namespace py = pybind11;
 
 class GeneralInferenceEngine {
     // Static members, which would be shared between all engines
@@ -48,13 +50,13 @@ class GeneralInferenceEngine {
 
     // Model name, which using for log messages
     std::string model_name_;
-        
+
     // Vector of device pointers, which reffer to engine bindings
     std::vector<void*> bindingsRT;
     // CUDA Stream used for current engine
     cudaStream_t stream_;
     // Batchsize with engine was compiled
-    int engine_batch_size_ = 1;
+    int engine_batch_size_ = -1;
     // Vector with shapes of bindings
     std::vector<nvinfer1::Dims> bindings_dim_;
     // Host pointer, which is reserved for transmissions between host and input binding
@@ -66,7 +68,15 @@ public:
     GeneralInferenceEngine(const char* model_name, const char* weight_path);
     virtual ~GeneralInferenceEngine() {};
 
+    // Deserialization of engine file from filepath
     void deserialize(const char *filename);
+    // Enqueue pipeline in stream
     void enqueue();
+    // Wait for execution
     void synchronize();
+    // Get size of binding by ID
+    size_t binding_size(int index);
+    // Get size of dimenstions
+    size_t binding_size(nvinfer1::Dims dim);
+
 };
