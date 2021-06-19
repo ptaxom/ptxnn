@@ -20,7 +20,7 @@ std::map<Severity, std::string> SEVERITY_COLORS = {
 
 size_t sample_size(nvinfer1::Dims dim)
 {
-    size_t size = 1;
+    size_t size = sizeof(dnnType);
     for(int i = 1; i < dim.nbDims; i++)
         size *= dim.d[i];
     return size;
@@ -28,7 +28,7 @@ size_t sample_size(nvinfer1::Dims dim)
 
 size_t binding_size(nvinfer1::Dims dim)
 {
-    size_t size = 1;
+    size_t size = sizeof(dnnType);
     for(int i = 0; i < dim.nbDims; i++)
         size *= dim.d[i];
     return size;
@@ -76,23 +76,24 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
     {
         void *device_ptr;
         Dims dim = engineRT->getBindingDimensions(i);
-        size_t binding_size = engineRT->getMaxBatchSize() * sample_size(dim) * sizeof(dnnType);
-        checkCuda(cudaMalloc(&device_ptr, binding_size));
+        size_t current_binding_size = binding_size(dim);
+        checkCuda(cudaMalloc(&device_ptr, current_binding_size));
 
         if (engineRT->bindingIsInput(i))
         {
             ++n_inputs;
             bindingsRT.insert(bindingsRT.begin(), device_ptr);
-            bindings_dim_.insert(bindings_dim_.begin(), engineRT->getBindingDimensions(i));
+            bindings_dim_.insert(bindings_dim_.begin(), dim);
+            engine_batch_size_ = dim.d[0];
         }
         else
         {
             bindingsRT.push_back(device_ptr);
-            bindings_dim_.push_back(engineRT->getBindingDimensions(i));
+            bindings_dim_.push_back(dim);
         }
     
         std::stringstream message_str;
-        message_str << "Allocated " << binding_size << " bytes for binding " << engineRT->getBindingName(i);
+        message_str << "Allocated " << current_binding_size << " bytes for binding " << engineRT->getBindingName(i);
         EngineLogger.log(Severity::kVERBOSE, message_str.str().c_str());
     }
     
@@ -139,4 +140,21 @@ void GeneralInferenceEngine::deserialize(const char *filename) {
     
     EngineLogger.log(Severity::kINFO, "Loaded engine from", filename);
     engineRT = runtimeRT->deserializeCudaEngine(gieModelStream, size, (IPluginFactory *) GeneralInferenceEngine::tkPlugins);
+}
+
+void GeneralInferenceEngine::enqueue(){
+    checkCuda(cudaMemcpyAsync(bindingsRT[0], input_host_, 
+        binding_size(bindings_dim_[0]), cudaMemcpyHostToDevice, stream_));
+    
+    contextRT->enqueue(engine_batch_size_, bindingsRT.data(), stream_, nullptr);
+
+    for(int binding_id = 1; binding_id < engineRT->getNbBindings(); binding_id++)
+    {
+        checkCuda(cudaMemcpyAsync(outputs_host_[binding_id - 1], bindingsRT[binding_id], 
+           binding_size(bindings_dim_[binding_id]), cudaMemcpyDeviceToHost, stream_));
+    }
+}
+
+void GeneralInferenceEngine::synchronize(){
+    checkCuda(cudaStreamSynchronize(stream_));
 }

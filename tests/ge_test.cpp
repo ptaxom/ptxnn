@@ -9,4 +9,6 @@ int main(int argc, char* argv[])
         exit(1);
     }
     GeneralInferenceEngine engine("test model", argv[1]);
+    engine.enqueue();
+    engine.synchronize();
 }

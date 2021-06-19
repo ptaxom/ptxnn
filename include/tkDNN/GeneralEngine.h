@@ -53,10 +53,12 @@ class GeneralInferenceEngine {
     std::vector<void*> bindingsRT;
     // CUDA Stream used for current engine
     cudaStream_t stream_;
-    //
+    // Batchsize with engine was compiled
+    int engine_batch_size_ = 1;
+    // Vector with shapes of bindings
     std::vector<nvinfer1::Dims> bindings_dim_;
     // Host pointer, which is reserved for transmissions between host and input binding
-    void* input_host_;
+    void* input_host_ = nullptr;
     // Vector of host pointers, which is reserved for transmissions between output bindings and host
     std::vector<void*> outputs_host_;
 
@@ -64,7 +66,7 @@ public:
     GeneralInferenceEngine(const char* model_name, const char* weight_path);
     virtual ~GeneralInferenceEngine() {};
 
-    void enqueue(int batchSize = 1);    
-
     void deserialize(const char *filename);
+    void enqueue();
+    void synchronize();
 };
