@@ -1,17 +1,4 @@
-#include <iostream>
-#include <map>
-#include <errno.h>
-#include <string.h> // memcpy
-#include <stdlib.h>
-#include <mutex>
-#include <iostream>
-#include <fstream>
-#include <map>
-
 #include "GeneralEngine.h"
-#include "NvInfer.h"
-#include "NvInferPlugin.h"
-
 
 using namespace nvinfer1;
 using Severity = ILogger::Severity;
@@ -30,6 +17,23 @@ std::map<Severity, std::string> SEVERITY_COLORS = {
     {Severity::kVERBOSE,               "\033[94m[DEBUG]:    "}
 };
 
+
+size_t sample_size(nvinfer1::Dims dim)
+{
+    size_t size = 1;
+    for(int i = 1; i < dim.nbDims; i++)
+        size *= dim.d[i];
+    return size;
+}
+
+size_t binding_size(nvinfer1::Dims dim)
+{
+    size_t size = 1;
+    for(int i = 0; i < dim.nbDims; i++)
+        size *= dim.d[i];
+    return size;
+}
+
 class EngineLogger : public ILogger {
 
     std::mutex log_guard;
@@ -41,9 +45,16 @@ public:
         std::cout << SEVERITY_COLORS[severity] << msg << "\033[0m" <<  std::endl;
     }
 
+    template <class T>
+    void log(Severity severity, const char* msg, T model_name){
+        std::stringstream message_ss;
+        message_ss << msg << " " << model_name;
+        log(severity, message_ss.str().c_str());
+    }
+
 } EngineLogger;
 
-GeneralInferenceEngine::GeneralInferenceEngine(const char* weight_path)
+GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const char* weight_path): model_name_(model_name)
 {
     if (!GeneralInferenceEngine::builderRT)
     {
@@ -56,6 +67,52 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* weight_path)
         initLibNvInferPlugins(&EngineLogger, "");
     }
     deserialize(weight_path);
+    
+    contextRT = engineRT->createExecutionContext();
+    EngineLogger.log(Severity::kINFO, "Created execution context for", model_name_);
+
+    int n_inputs = 0;
+    for(int i = 0; i < engineRT->getNbBindings(); i++)
+    {
+        void *device_ptr;
+        Dims dim = engineRT->getBindingDimensions(i);
+        size_t binding_size = engineRT->getMaxBatchSize() * sample_size(dim) * sizeof(dnnType);
+        checkCuda(cudaMalloc(&device_ptr, binding_size));
+
+        if (engineRT->bindingIsInput(i))
+        {
+            ++n_inputs;
+            bindingsRT.insert(bindingsRT.begin(), device_ptr);
+            bindings_dim_.insert(bindings_dim_.begin(), engineRT->getBindingDimensions(i));
+        }
+        else
+        {
+            bindingsRT.push_back(device_ptr);
+            bindings_dim_.push_back(engineRT->getBindingDimensions(i));
+        }
+    
+        std::stringstream message_str;
+        message_str << "Allocated " << binding_size << " bytes for binding " << engineRT->getBindingName(i);
+        EngineLogger.log(Severity::kVERBOSE, message_str.str().c_str());
+    }
+    
+    if (n_inputs != 1)
+    {
+        std::stringstream info_string;
+        info_string << "Number of inputs(" << n_inputs << ") is not supported currently";
+        throw std::runtime_error(info_string.str());
+    }
+
+    checkCuda(cudaStreamCreate(&stream_));
+    EngineLogger.log(Severity::kINFO, "Created CUDA stream for", model_name_);
+
+    checkCuda(cudaMallocHost(&input_host_, binding_size(bindings_dim_[0])));
+    for(int binding_id = 1; binding_id < engineRT->getNbBindings(); binding_id++)
+    {
+        void *host_ptr;
+        checkCuda(cudaMallocHost(&host_ptr, binding_size(bindings_dim_[binding_id])));
+        outputs_host_.push_back(host_ptr);
+    }
 }
 
 void GeneralInferenceEngine::deserialize(const char *filename) {
@@ -79,7 +136,7 @@ void GeneralInferenceEngine::deserialize(const char *filename) {
         throw std::runtime_error(info_string.str());
     }
 
-    info_string << "Loaded engine from " << filename << std::endl;
-    EngineLogger.log(Severity::kINFO, info_string.str().c_str());
+    
+    EngineLogger.log(Severity::kINFO, "Loaded engine from", filename);
     engineRT = runtimeRT->deserializeCudaEngine(gieModelStream, size, (IPluginFactory *) GeneralInferenceEngine::tkPlugins);
 }
