@@ -47,14 +47,16 @@ find_package(yaml-cpp REQUIRED)
 
 # Python bindings
 find_package(Python COMPONENTS Interpreter Development)
-find_package(pybind11 CONFIG)
+find_package(pybind11 REQUIRED)
 include_directories(${pybind11_INCLUDE_DIRS})
+include_directories(${PYTHON_INCLUDE_DIRS})
 
 #-------------------------------------------------------------------------------
 # Build Libraries
 #-------------------------------------------------------------------------------
 file(GLOB tkdnn_SRC "src/*.cpp")
-set(tkdnn_LIBS kernels ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDNN_LIBRARIES} ${OpenCV_LIBS} yaml-cpp)
+set(tkdnn_LIBS kernels ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDNN_LIBRARIES} ${OpenCV_LIBS} yaml-cpp nvinfer_plugin)
+set(python_LIBS pybind11::module pybind11::lto python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR})
 
 if(BUILD_LIB)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -76,7 +78,12 @@ if(BUILD_LIB)
 endif()
 
 add_executable(general_engine_test tests/ge_test.cpp ${tkdnn_SRC})
-target_link_libraries(general_engine_test ${tkdnn_LIBS} nvinfer_plugin)
+target_link_libraries(general_engine_test ${tkdnn_LIBS} ${python_LIBS})
 
-#pybind11_add_module(binding ${tkdnn_SRC})
-#target_link_libraries(binding ${tkdnn_LIBS} nvinfer_plugin)
+pybind11_add_module(mcdnn ${tkdnn_SRC})
+target_link_libraries(mcdnn PUBLIC ${tkdnn_LIBS} ${python_LIBS})
+
+install(TARGETS mcdnn
+  COMPONENT python
+  LIBRARY DESTINATION "/usr/lib/python3/dist-packages"
+  )

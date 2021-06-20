@@ -13,6 +13,12 @@
 #include <map>
 #include <cuda.h>
 
+#include <pybind11/pybind11.h>
+#include <pybind11/numpy.h>
+#include <Python.h>
+#include <pybind11/stl.h>
+#include <pybind11/complex.h>
+
 #include "NvInfer.h"
 #include "NetworkRT.h"
 #include "utils.h"
@@ -32,6 +38,8 @@ struct TRTDeleter{
 std::ostream& operator<<(std::ostream& os, const nvinfer1::Dims& obj);
 
 namespace py = pybind11;
+using NPArray = py::array_t<dnnType, py::array::c_style | py::array::forcecast>;
+using ListNPArray = std::vector<NPArray>;
 
 class GeneralInferenceEngine {
     // Static members, which would be shared between all engines
@@ -63,6 +71,10 @@ class GeneralInferenceEngine {
     void* input_host_ = nullptr;
     // Vector of host pointers, which is reserved for transmissions between output bindings and host
     std::vector<void*> outputs_host_;
+    // Vector of explicit dims of bindings
+    std::vector<nvinfer1::Dims> bindings_explicit_dims_;
+    // Vector of numpy shapes
+    std::vector<std::vector<int>> numpy_shapes_;
 
 public:    
     GeneralInferenceEngine(const char* model_name, const char* weight_path);
@@ -79,4 +91,7 @@ public:
     // Get size of dimenstions
     size_t binding_size(nvinfer1::Dims dim);
 
+    ListNPArray predict(const NPArray &input);
+    void predict_async(const NPArray &input);
+    ListNPArray synchronize_async();
 };
