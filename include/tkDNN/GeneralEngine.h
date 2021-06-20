@@ -42,6 +42,7 @@ using NPArray = py::array_t<dnnType, py::array::c_style | py::array::forcecast>;
 using ListNPArray = std::vector<NPArray>;
 
 class GeneralInferenceEngine {
+protected:
     // Static members, which would be shared between all engines
     static std::shared_ptr<nvinfer1::IBuilder> builderRT;
     static std::shared_ptr<nvinfer1::IBuilderConfig> configRT;
