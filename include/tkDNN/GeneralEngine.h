@@ -46,7 +46,6 @@ protected:
     // Static members, which would be shared between all engines
     static std::shared_ptr<nvinfer1::IBuilder> builderRT;
     static std::shared_ptr<nvinfer1::IBuilderConfig> configRT;
-    static tk::dnn::PluginFactory *tkPlugins;
     static std::shared_ptr<nvinfer1::IRuntime> runtimeRT;
 
     // Class members, which defines engine
@@ -56,6 +55,8 @@ protected:
     nvinfer1::ICudaEngine *engineRT;
     // Execution context of deserilized CUDA engine
     nvinfer1::IExecutionContext *contextRT;
+    // Plugin manager, which stores yolo heads
+    tk::dnn::PluginFactory *tkPlugins;
 
     // Model name, which using for log messages
     std::string model_name_;

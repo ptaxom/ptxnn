@@ -37,8 +37,6 @@ sz = args.dim
 resize_img = cv2.resize(image, (sz, sz), interpolation=cv2.INTER_CUBIC)
 type_img = resize_img.astype("float32").transpose(2, 0, 1)[np.newaxis]  # (1, 3, h, w)
 
-input_tensor = np.zeros((args.batchsize, 3, sz, sz), np.float32)
-input_tensor[0] = type_img
-
-predict = engine.predict(input_tensor)
+predict = engine.predict(type_img)
 print(predict)
+print(np.sum(predict[0] ** 2))

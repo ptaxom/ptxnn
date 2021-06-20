@@ -5,7 +5,6 @@ using Severity = ILogger::Severity;
 
 std::shared_ptr<nvinfer1::IBuilder> GeneralInferenceEngine::builderRT;
 std::shared_ptr<nvinfer1::IBuilderConfig> GeneralInferenceEngine::configRT;
-tk::dnn::PluginFactory *GeneralInferenceEngine::tkPlugins;
 std::shared_ptr<nvinfer1::IRuntime> GeneralInferenceEngine::runtimeRT;
 
 
@@ -54,10 +53,10 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
         GeneralInferenceEngine::builderRT = ptr;
         std::shared_ptr<nvinfer1::IBuilderConfig> ptr2(ptr->createBuilderConfig(), TRTDeleter());
         GeneralInferenceEngine::configRT = ptr2;
-        GeneralInferenceEngine::tkPlugins = new tk::dnn::PluginFactory();
         GeneralInferenceEngine::runtimeRT = std::shared_ptr<IRuntime>(createInferRuntime(EngineLogger), TRTDeleter());
         initLibNvInferPlugins(&EngineLogger, "");
     }
+    tkPlugins = new tk::dnn::PluginFactory();
     deserialize(weight_path);
     engine_batch_size_ = engineRT->hasImplicitBatchDimension() ? engineRT->getMaxBatchSize() : engineRT->getBindingDimensions(0).d[0];
     EngineLogger.log(Severity::kINFO, "Used batchsize of", engine_batch_size_);
@@ -149,9 +148,8 @@ void GeneralInferenceEngine::deserialize(const char *filename) {
         throw std::runtime_error(info_string.str());
     }
 
-    
     EngineLogger.log(Severity::kINFO, "Loaded engine from", filename);
-    engineRT = runtimeRT->deserializeCudaEngine(gieModelStream, size, (IPluginFactory *) GeneralInferenceEngine::tkPlugins);
+    engineRT = runtimeRT->deserializeCudaEngine(gieModelStream, size, (IPluginFactory *) tkPlugins);
 }
 
 void GeneralInferenceEngine::enqueue(){
@@ -231,12 +229,4 @@ ListNPArray GeneralInferenceEngine::synchronize_async()
         predictions.push_back(NPArray(numpy_shapes_[i], (dnnType*)outputs_host_[i - 1]));
     }
     return predictions;
-}
-
-PYBIND11_MODULE(mcdnn, m) {
-    py::class_<GeneralInferenceEngine>(m, "GeneralInferenceEngine")
-            .def(py::init<const char*, const char*>())
-            .def("predict", &GeneralInferenceEngine::predict)
-            .def("predict_async", &GeneralInferenceEngine::predict_async)
-            .def("synchronize_async", &GeneralInferenceEngine::synchronize_async);
 }
