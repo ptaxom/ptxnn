@@ -83,7 +83,9 @@ target_link_libraries(general_engine_test ${tkdnn_LIBS} ${python_LIBS})
 pybind11_add_module(mcdnn ${tkdnn_SRC})
 target_link_libraries(mcdnn PUBLIC ${tkdnn_LIBS} ${python_LIBS})
 
-install(TARGETS mcdnn
-  COMPONENT python
-  LIBRARY DESTINATION "/usr/lib/python3/dist-packages"
-  )
+if(INSTALL_PYTHON)
+    install(TARGETS mcdnn
+    COMPONENT python
+    LIBRARY DESTINATION "/usr/lib/python3/dist-packages"
+    )
+endif()

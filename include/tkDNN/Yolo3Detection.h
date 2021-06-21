@@ -9,7 +9,7 @@ namespace tk { namespace dnn {
 
 class Yolo3Detection : public DetectionNN
 {
-private:
+protected:
     int num = 0;
     int nMasks = 0;
     int nDets = 0;

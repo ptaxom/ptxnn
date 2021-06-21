@@ -88,6 +88,17 @@ void Yolo3Detection::preprocess(cv::Mat &frame, const int bi){
         memcpy((void*)&input[idx + netRT->input_dim.tot()*bi], (void*)bgr[ch].data, imagePreproc.rows*imagePreproc.cols*sizeof(dnnType));     
     }
     checkCuda(cudaMemcpyAsync(input_d + netRT->input_dim.tot()*bi, input + netRT->input_dim.tot()*bi, netRT->input_dim.tot()*sizeof(dnnType), cudaMemcpyHostToDevice, netRT->stream));
+    // if (bi == 0)
+    // {
+    //     size_t sample_size_ = 512 * 512 * 12;
+    //     char *data = new char[sample_size_];
+    //     checkCuda(cudaMemcpy(data, input_d + netRT->input_dim.tot()*bi, sample_size_, cudaMemcpyDeviceToHost));
+    //     std::ofstream datafile;
+    //     datafile.open("input.bin",std::ofstream::binary);
+    //     datafile.write(data, sample_size_);
+    //     datafile.close();
+    //     delete data;
+    // }
 #endif
 }
 

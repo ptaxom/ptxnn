@@ -1,4 +1,5 @@
 #include "YoloEngine.h"
+#include <fstream>
 
 namespace py = pybind11;
 using NPImage = py::array_t<uint8_t, py::array::c_style | py::array::forcecast>;
@@ -53,7 +54,7 @@ void YoloEngine::preprocess(int index_id, const NPImage &input)
 
     for(int channel = 0; channel < 3; channel++)
     {
-        checkCuda(cudaMemcpyAsync(bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)bgr_[channel].data, 
+        checkCuda(cudaMemcpyAsync(bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)bgr_[2 - channel].data, 
             channel_size_, cudaMemcpyHostToDevice, stream_));
     }
 }
@@ -93,7 +94,7 @@ NPArray YoloEngine::postprocess(int index_id)
           W = input_dim_.d[3];
     for(int i = 0; i < heads.size(); i++) {
         heads[i]->dstData = rt_out[i];
-        heads[i]->computeDetections(dets, nDets, W, H, conf_threshold_);
+        heads[i]->computeDetections(dets, nDets, W, H, conf_threshold_, heads[i]->new_coords);
     }
     tk::dnn::Yolo::mergeDetections(dets, nDets, n_classes_);
 
@@ -111,7 +112,7 @@ NPArray YoloEngine::postprocess(int index_id)
         for(int target_class_id = 0; target_class_id < n_classes_; target_class_id++)
             if (dets[j].prob[target_class_id] >= conf_threshold_)
                 {
-                    obj_class = 1;
+                    obj_class = target_class_id;
                     prob = dets[j].prob[target_class_id];
                     break;
                 }
