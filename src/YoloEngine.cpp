@@ -149,4 +149,11 @@ PYBIND11_MODULE(mcdnn, m) {
             .def("predict_image", &YoloEngine::predict_image)
             .def("predict_image_async", &YoloEngine::predict_image_async)
             .def("synchronize_async", &YoloEngine::synchronize_async);
+
+    m.def("set_severity", &set_severity, "Set TensorRT logger severity");
+    m.attr("kINTERNAL_ERROR") = 0;
+    m.attr("kERROR") = 1;
+    m.attr("kWARNING") = 2;
+    m.attr("kINFO") = 3;
+    m.attr("kVERBOSE") = 4;
 }

@@ -36,6 +36,7 @@ struct TRTDeleter{
 
 
 std::ostream& operator<<(std::ostream& os, const nvinfer1::Dims& obj);
+void set_severity(int severity);
 
 namespace py = pybind11;
 using NPArray = py::array_t<dnnType, py::array::c_style | py::array::forcecast>;

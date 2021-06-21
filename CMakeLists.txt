@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project (tkDNN)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_BUILD_TYPE Release)
 if(UNIX)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -Wno-deprecated-declarations -Wno-unused-variable ")
 endif()
@@ -9,6 +10,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/tkDNN)
 
 
 if(DEBUG)
+    set(CMAKE_BUILD_TYPE DEBUG)
     add_definitions(-DDEBUG)
 endif()
 
@@ -76,9 +78,6 @@ if(BUILD_LIB)
         )
     endif()
 endif()
-
-add_executable(general_engine_test tests/ge_test.cpp ${tkdnn_SRC})
-target_link_libraries(general_engine_test ${tkdnn_LIBS} ${python_LIBS})
 
 pybind11_add_module(mcdnn ${tkdnn_SRC})
 target_link_libraries(mcdnn PUBLIC ${tkdnn_LIBS} ${python_LIBS})

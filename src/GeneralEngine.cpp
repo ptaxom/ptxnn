@@ -29,10 +29,14 @@ class EngineLogger : public ILogger {
     std::mutex log_guard;
 
 public:
+
+    Severity logger_severity = Severity::kWARNING;
+
     void log(Severity severity, const char* msg) override {
         std::lock_guard<std::mutex> guard(log_guard);
         
-        std::cout << SEVERITY_COLORS[severity] << msg << "\033[0m" <<  std::endl;
+        if (severity <= logger_severity)
+            std::cout << SEVERITY_COLORS[severity] << msg << "\033[0m" <<  std::endl;
     }
 
     template <class T>
@@ -43,6 +47,13 @@ public:
     }
 
 } EngineLogger;
+
+void set_severity(int severity)
+{
+    if (severity < 0 || severity > 4)
+        throw std::runtime_error("Unsupported severity");
+    EngineLogger.logger_severity = (Severity)severity;
+}
 
 GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const char* weight_path): model_name_(model_name)
 {

@@ -30,6 +30,7 @@ image = cv2.imread(args.input_image)
 if image is None:
     raise RuntimeError(f'Couldnt load image {args.input_image}')
 
+mcdnn.set_severity(mcdnn.kVERBOSE)
 engine = mcdnn.YoloEngine("YOLO", args.path, 80, 0.3)
 
 
