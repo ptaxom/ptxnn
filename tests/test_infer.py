@@ -1,9 +1,9 @@
 try:
-    import mcdnn
+    import ptxnn
 except:
     import sys
     sys.path.append('../build/')
-    import mcdnn
+    import ptxnn
 
 import cv2
 import numpy as np
@@ -31,11 +31,12 @@ image = cv2.imread(args.input_image)
 if image is None:
     raise RuntimeError(f'Couldnt load image {args.input_image}')
 
-mcdnn.set_severity(mcdnn.kVERBOSE)
-engine = mcdnn.GeneralInferenceEngine(args.model, args.path)
+ptxnn.set_severity(ptxnn.kVERBOSE)
+engine = ptxnn.GeneralInferenceEngine(args.model, args.path)
 
 sz = args.dim
 resize_img = cv2.resize(image, (sz, sz), interpolation=cv2.INTER_CUBIC)
 type_img = resize_img.astype("float32").transpose(2, 0, 1)[np.newaxis]  # (1, 3, h, w)
 input_data = np.concatenate([type_img for _ in range(args.batchsize)], axis=0)
 predict = engine.predict(input_data)
+print(predict)

@@ -1,9 +1,9 @@
 try:
-    import mcdnn
+    import ptxnn
 except:
     import sys
     sys.path.append('../build/')
-    import mcdnn
+    import ptxnn
 
 import cv2
 import numpy as np
@@ -30,8 +30,8 @@ image = cv2.imread(args.input_image)
 if image is None:
     raise RuntimeError(f'Couldnt load image {args.input_image}')
 
-mcdnn.set_severity(mcdnn.kVERBOSE)
-engine = mcdnn.YoloEngine("YOLO", args.path, 80, 0.3)
+ptxnn.set_severity(ptxnn.kVERBOSE)
+engine = ptxnn.YoloEngine("YOLO", args.path, 80, 0.3)
 
 
 predict = engine.predict_image([image])

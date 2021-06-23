@@ -137,7 +137,7 @@ ListNPArray YoloEngine::synchronize_async()
     return sample_predictions;
 }
 
-PYBIND11_MODULE(mcdnn, m) {
+PYBIND11_MODULE(ptxnn, m) {
     py::class_<GeneralInferenceEngine>(m, "GeneralInferenceEngine")
             .def(py::init<const char*, const char*>())
             .def("predict", &GeneralInferenceEngine::predict)
