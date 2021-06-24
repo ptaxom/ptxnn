@@ -58,7 +58,7 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 #-------------------------------------------------------------------------------
 file(GLOB tkdnn_SRC "src/*.cpp")
 set(tkdnn_LIBS kernels ${CUDA_LIBRARIES} ${CUDA_CUBLAS_LIBRARIES} ${CUDNN_LIBRARIES} ${OpenCV_LIBS} yaml-cpp nvinfer_plugin)
-set(python_LIBS pybind11::module pybind11::lto python${Python_VERSION_MAJOR}.${Python_VERSION_MINOR})
+set(python_LIBS pybind11::module pybind11::lto ${Python_LIBRARIES})
 
 if(BUILD_LIB)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

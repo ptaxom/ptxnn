@@ -54,7 +54,7 @@ void YoloEngine::preprocess(int index_id, const NPImage &input)
 
     for(int channel = 0; channel < 3; channel++)
     {
-        checkCuda(cudaMemcpyAsync(bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)bgr_[2 - channel].data, 
+        checkCuda(cudaMemcpyAsync((char*)bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)bgr_[2 - channel].data, 
             channel_size_, cudaMemcpyHostToDevice, stream_));
     }
 }
@@ -85,7 +85,7 @@ NPArray YoloEngine::postprocess(int index_id)
  
     for(int i = 1; i < bindingsRT.size(); i++)
     {
-        void* sample_ptr = (void*)bindingsRT[i] + index_id * (binding_size(i) / engine_batch_size_);
+        void* sample_ptr = (char*)bindingsRT[i] + index_id * (binding_size(i) / engine_batch_size_);
         rt_out.push_back(static_cast<dnnType*>(sample_ptr));
     }
 
