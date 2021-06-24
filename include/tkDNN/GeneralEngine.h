@@ -79,6 +79,9 @@ protected:
     // Vector of numpy shapes
     std::vector<std::vector<int>> numpy_shapes_;
 
+    // Mutex to protect from interleaved async calls
+    std::mutex mutex_;
+
 public:    
     GeneralInferenceEngine(const char* model_name, const char* weight_path);
     virtual ~GeneralInferenceEngine() {};
@@ -93,6 +96,10 @@ public:
     size_t binding_size(int index);
     // Get size of dimenstions
     size_t binding_size(nvinfer1::Dims dim);
+    // Get batchsize of engine
+    size_t batch_size() const;
+    // Get input shape which expected as numpy array
+    py::tuple np_input_shape() const;
 
     ListNPArray predict(const NPArray &input);
     void predict_async(const NPArray &input);

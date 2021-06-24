@@ -17,7 +17,6 @@ using NPImage = py::array_t<uint8_t, py::array::c_style | py::array::forcecast>;
 
 class YoloEngine : public GeneralInferenceEngine
 {
-    std::mutex mutex_;
     int batch_size_;
     int n_classes_;
     cv::Mat bgr_[3];

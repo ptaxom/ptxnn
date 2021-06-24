@@ -4,10 +4,9 @@ project (tkDNN)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 set(CMAKE_BUILD_TYPE Release)
 if(UNIX)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -Wno-deprecated-declarations -Wno-unused-variable ")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -fPIC -Wno-deprecated-declarations -Wno-unused-variable ")
 endif()
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/tkDNN)
-
 
 if(DEBUG)
     set(CMAKE_BUILD_TYPE DEBUG)

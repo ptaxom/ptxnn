@@ -207,6 +207,7 @@ ListNPArray GeneralInferenceEngine::predict(const NPArray &input)
 
 void GeneralInferenceEngine::predict_async(const NPArray &input)
 {
+    mutex_.lock();
     bool has_valid_size = input.ndim() == bindings_explicit_dims_[0].nbDims;
     for(int i = 0; i < input.ndim() && has_valid_size; i++)
         has_valid_size &= bindings_explicit_dims_[0].d[i] == input.shape(i);
@@ -214,6 +215,7 @@ void GeneralInferenceEngine::predict_async(const NPArray &input)
     {
         std::stringstream ss;
         ss << "Invalid input numpy array. Expected numpy with shape " << bindings_explicit_dims_[0];
+        mutex_.unlock();
         throw std::runtime_error(ss.str().c_str());
     }
     py::buffer_info input_buffer = input.request();
@@ -239,5 +241,19 @@ ListNPArray GeneralInferenceEngine::synchronize_async()
     {
         predictions.push_back(NPArray(numpy_shapes_[i], (dnnType*)outputs_host_[i - 1]));
     }
+    mutex_.unlock();
     return predictions;
+}
+
+size_t GeneralInferenceEngine::batch_size() const
+{
+    return engine_batch_size_;
+}
+
+py::tuple GeneralInferenceEngine::np_input_shape() const
+{
+    auto shape = py::tuple(numpy_shapes_[0].size());
+    for(int i = 0; i < numpy_shapes_[0].size(); i++)
+        shape[i] = numpy_shapes_[0][i];
+    return shape;
 }
