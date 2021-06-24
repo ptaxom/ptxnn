@@ -78,12 +78,5 @@ if(BUILD_LIB)
     endif()
 endif()
 
-pybind11_add_module(ptxnn ${tkdnn_SRC})
-target_link_libraries(ptxnn PUBLIC ${tkdnn_LIBS} ${python_LIBS})
-
-if(INSTALL_PYTHON)
-    install(TARGETS ptxnn
-    COMPONENT python
-    LIBRARY DESTINATION "/usr/lib/python3/dist-packages"
-    )
-endif()
+pybind11_add_module(_ptxnn ${tkdnn_SRC})
+target_link_libraries(_ptxnn PUBLIC ${tkdnn_LIBS} ${python_LIBS})

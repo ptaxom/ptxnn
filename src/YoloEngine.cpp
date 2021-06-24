@@ -137,7 +137,7 @@ ListNPArray YoloEngine::synchronize_async()
     return sample_predictions;
 }
 
-PYBIND11_MODULE(ptxnn, m) {
+PYBIND11_MODULE(_ptxnn, m) {
     py::class_<GeneralInferenceEngine>(m, "GeneralInferenceEngine")
             .def(py::init<const char*, const char*>())
             .def("predict", &GeneralInferenceEngine::predict)
@@ -153,9 +153,4 @@ PYBIND11_MODULE(ptxnn, m) {
             .def("synchronize_async", &YoloEngine::synchronize_async);
 
     m.def("set_severity", &set_severity, "Set TensorRT logger severity");
-    m.attr("kINTERNAL_ERROR") = 0;
-    m.attr("kERROR") = 1;
-    m.attr("kWARNING") = 2;
-    m.attr("kINFO") = 3;
-    m.attr("kVERBOSE") = 4;
 }
