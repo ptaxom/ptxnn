@@ -1,1 +1,1 @@
-from .GeneralEngine import GeneralInferenceEngine
+from .GeneralEngine import GeneralInferenceEngine, AsyncGeneralInferenceEngine

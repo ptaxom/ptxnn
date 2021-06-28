@@ -13,4 +13,4 @@ def set_severity(severity: Severity) -> None:
     """
     Set severity of TensorRT logger
     """
-    set_severity_impl(severity)
+    set_severity_impl(severity.value)

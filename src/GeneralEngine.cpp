@@ -208,6 +208,7 @@ ListNPArray GeneralInferenceEngine::predict(const NPArray &input)
 void GeneralInferenceEngine::predict_async(const NPArray &input)
 {
     mutex_.lock();
+    is_inferencing_ = true;
     bool has_valid_size = input.ndim() == bindings_explicit_dims_[0].nbDims;
     for(int i = 0; i < input.ndim() && has_valid_size; i++)
         has_valid_size &= bindings_explicit_dims_[0].d[i] == input.shape(i);
@@ -215,6 +216,7 @@ void GeneralInferenceEngine::predict_async(const NPArray &input)
     {
         std::stringstream ss;
         ss << "Invalid input numpy array. Expected numpy with shape " << bindings_explicit_dims_[0];
+        is_inferencing_ = false;
         mutex_.unlock();
         throw std::runtime_error(ss.str().c_str());
     }
@@ -233,9 +235,20 @@ void GeneralInferenceEngine::predict_async(const NPArray &input)
     }
 }
 
-ListNPArray GeneralInferenceEngine::synchronize_async()
+void on_execution_end_gie(void *data)
 {
-    checkCuda(cudaStreamSynchronize(stream_));
+    GeneralInferenceEngine *engine = static_cast<GeneralInferenceEngine*>(data);
+    engine->is_inferencing_ = false;
+}
+
+void GeneralInferenceEngine::predict_callbacked(const NPArray &input)
+{
+    predict_async(input);
+    checkCuda(cudaLaunchHostFunc(stream_, &on_execution_end_gie, this));
+}
+
+ListNPArray GeneralInferenceEngine::synchronize_callback()
+{
     ListNPArray predictions;
     for(int i = 1; i < bindingsRT.size(); i++)
     {
@@ -245,9 +258,27 @@ ListNPArray GeneralInferenceEngine::synchronize_async()
     return predictions;
 }
 
+ListNPArray GeneralInferenceEngine::synchronize_async()
+{
+    checkCuda(cudaStreamSynchronize(stream_));
+    ListNPArray predictions;
+    for(int i = 1; i < bindingsRT.size(); i++)
+    {
+        predictions.push_back(NPArray(numpy_shapes_[i], (dnnType*)outputs_host_[i - 1]));
+    }
+    is_inferencing_ = false;
+    mutex_.unlock();
+    return predictions;
+}
+
 size_t GeneralInferenceEngine::batch_size() const
 {
     return engine_batch_size_;
+}
+
+bool GeneralInferenceEngine::is_inferencing() const
+{
+    return is_inferencing_;
 }
 
 py::tuple GeneralInferenceEngine::np_input_shape() const

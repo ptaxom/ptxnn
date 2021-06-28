@@ -2,6 +2,7 @@ from _ptxnn import GeneralInferenceEngine as GeneralInferenceEngine_impl
 
 import typing as tp
 import numpy as np
+import asyncio
 
 class GeneralInferenceEngine:
     """
@@ -74,3 +75,50 @@ class GeneralInferenceEngine:
         """
         return self.engine.synchronize_async()
 
+
+class AsyncGeneralInferenceEngine(GeneralInferenceEngine):
+    """Asynchronous version of GeneralInferenceEngine
+    """
+
+    _CHECK_TIMEOUT = 0.001 # check inference every 0.001s
+
+    def __init__(self, model_name: str, engine_path: str) -> None:
+        super().__init__(model_name, engine_path)
+        self.enqueue_condition = asyncio.Condition()
+        self.predicted_condition = asyncio.Condition()
+        asyncio.ensure_future(self._notifier(), loop=asyncio.get_event_loop())
+
+    async def _notifier(self):
+        """Internal method to notify Future object, that execution is ended
+        """
+        while asyncio.get_running_loop().is_running():
+            # First block execution until tasks not enqueued 
+            async with self.enqueue_condition:
+                await self.enqueue_condition.wait()
+            
+            # Than polling engine to check execution progress
+            while True:
+                inferencing = self.engine.is_inferencing()
+                print('INFERENCE: ', inferencing)
+                if not inferencing:
+                    async with self.predicted_condition:
+                        self.predicted_condition.notify_all()
+                    break
+                else:
+                    await asyncio.sleep(AsyncGeneralInferenceEngine._CHECK_TIMEOUT)
+
+    def predict(self, input_data: np.ndarray) -> tp.List[np.ndarray]:
+        async def coro():
+            self.engine.predict_callbacked(input_data)
+
+            # send information to _notifier task, that execution started
+            async with self.enqueue_condition:
+                self.enqueue_condition.notify_all()
+
+            # than wait until prediction is done
+            async with self.predicted_condition:
+                await self.predicted_condition.wait_for(lambda: not self.engine.is_inferencing())
+            
+            return self.engine.synchronize_callback()
+        
+        return coro()

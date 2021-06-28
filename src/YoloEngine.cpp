@@ -144,6 +144,9 @@ PYBIND11_MODULE(_ptxnn, m) {
             .def("predict_async", &GeneralInferenceEngine::predict_async)
             .def("batch_size", &GeneralInferenceEngine::batch_size)
             .def("np_input_shape", &GeneralInferenceEngine::np_input_shape)
+            .def("is_inferencing", &GeneralInferenceEngine::is_inferencing)
+            .def("predict_callbacked", &GeneralInferenceEngine::predict_callbacked)
+            .def("synchronize_callback", &GeneralInferenceEngine::synchronize_callback)
             .def("synchronize_async", &GeneralInferenceEngine::synchronize_async);
 
     py::class_<YoloEngine, GeneralInferenceEngine>(m, "YoloEngine")

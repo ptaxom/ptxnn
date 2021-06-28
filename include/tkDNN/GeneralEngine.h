@@ -37,6 +37,7 @@ struct TRTDeleter{
 
 std::ostream& operator<<(std::ostream& os, const nvinfer1::Dims& obj);
 void set_severity(int severity);
+void on_execution_end_gie(void *data);
 
 namespace py = pybind11;
 using NPArray = py::array_t<dnnType, py::array::c_style | py::array::forcecast>;
@@ -81,8 +82,14 @@ protected:
 
     // Mutex to protect from interleaved async calls
     std::mutex mutex_;
+    // Flag, which indicated, that inference ended
+    bool is_inferencing_;
+
+    ListNPArray last_prediction_;
 
 public:    
+    friend void on_execution_end_gie(void *data);
+
     GeneralInferenceEngine(const char* model_name, const char* weight_path);
     virtual ~GeneralInferenceEngine() {};
 
@@ -100,8 +107,12 @@ public:
     size_t batch_size() const;
     // Get input shape which expected as numpy array
     py::tuple np_input_shape() const;
+    // Getter for is_inferencing flag
+    bool is_inferencing() const;
 
     ListNPArray predict(const NPArray &input);
     void predict_async(const NPArray &input);
+    void predict_callbacked(const NPArray &input);
+    ListNPArray synchronize_callback();
     ListNPArray synchronize_async();
 };
