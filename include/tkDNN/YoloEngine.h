@@ -36,6 +36,8 @@ public:
 
     ListNPArray predict_image(const std::vector<NPImage> &input);
     void predict_image_async(const std::vector<NPImage> &input);
+    void predict_image_callbacked(const std::vector<NPImage> &input);
+    ListNPArray synchronize_image_callback();
     ListNPArray synchronize_async();
 
 };

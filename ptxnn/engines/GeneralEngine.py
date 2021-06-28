@@ -1,4 +1,5 @@
 from _ptxnn import GeneralInferenceEngine as GeneralInferenceEngine_impl
+from .constants import CHECK_TIMEOUT
 
 import typing as tp
 import numpy as np
@@ -80,8 +81,6 @@ class AsyncGeneralInferenceEngine(GeneralInferenceEngine):
     """Asynchronous version of GeneralInferenceEngine
     """
 
-    _CHECK_TIMEOUT = 0.001 # check inference every 0.001s
-
     def __init__(self, model_name: str, engine_path: str) -> None:
         super().__init__(model_name, engine_path)
         self.enqueue_condition = asyncio.Condition()
@@ -99,13 +98,12 @@ class AsyncGeneralInferenceEngine(GeneralInferenceEngine):
             # Than polling engine to check execution progress
             while True:
                 inferencing = self.engine.is_inferencing()
-                print('INFERENCE: ', inferencing)
                 if not inferencing:
                     async with self.predicted_condition:
                         self.predicted_condition.notify_all()
                     break
                 else:
-                    await asyncio.sleep(AsyncGeneralInferenceEngine._CHECK_TIMEOUT)
+                    await asyncio.sleep(CHECK_TIMEOUT)
 
     def predict(self, input_data: np.ndarray) -> tp.List[np.ndarray]:
         async def coro():

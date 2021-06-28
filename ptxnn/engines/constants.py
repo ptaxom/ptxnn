@@ -1,0 +1,1 @@
+CHECK_TIMEOUT = 0.001 # check inference every 0.001s

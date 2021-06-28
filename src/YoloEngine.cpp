@@ -137,6 +137,20 @@ ListNPArray YoloEngine::synchronize_async()
     return sample_predictions;
 }
 
+void YoloEngine::predict_image_callbacked(const std::vector<NPImage> &input){
+    predict_image_async(input);
+    checkCuda(cudaLaunchHostFunc(stream_, &on_execution_end_gie, this));
+}
+
+ListNPArray YoloEngine::synchronize_image_callback()
+{
+    ListNPArray sample_predictions;
+    for(int batch_id = 0; batch_id < batch_size_; batch_id++)
+        sample_predictions.push_back(postprocess(batch_id));
+    mutex_.unlock();
+    return sample_predictions;
+}
+
 PYBIND11_MODULE(_ptxnn, m) {
     py::class_<GeneralInferenceEngine>(m, "GeneralInferenceEngine")
             .def(py::init<const char*, const char*>())
@@ -152,7 +166,9 @@ PYBIND11_MODULE(_ptxnn, m) {
     py::class_<YoloEngine, GeneralInferenceEngine>(m, "YoloEngine")
             .def(py::init<const char*, const char*, int, const float>())
             .def("predict_image", &YoloEngine::predict_image)
+            .def("predict_image_callbacked", &YoloEngine::predict_image_callbacked)
             .def("predict_image_async", &YoloEngine::predict_image_async)
+            .def("synchronize_image_callback", &YoloEngine::synchronize_image_callback)
             .def("synchronize_async", &YoloEngine::synchronize_async);
 
     m.def("set_severity", &set_severity, "Set TensorRT logger severity");

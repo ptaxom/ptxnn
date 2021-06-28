@@ -1,9 +1,7 @@
-try:
-    import ptxnn
-except:
-    import sys
-    sys.path.append('../build/')
-    import ptxnn
+import sys
+sys.path.append('..')
+sys.path.append('../ptxnn')
+import ptxnn
 
 import numpy as np
 np.random.seed(42)
@@ -18,13 +16,13 @@ parser.add_argument('-m', '--model_path', dest='model_path', action='store',
                     help='Path to other model engine file')
 args = parser.parse_args()
 
-ptxnn.set_severity(ptxnn.kVERBOSE)
+ptxnn.set_severity(ptxnn.Severity.kVERBOSE)
 
 class EngineWrapper:
 
     def __init__(self, engine):
         self.engine_obj = engine
-        self.input_tensor = np.zeros(engine.np_input_shape(), dtype=np.float32)
+        self.input_tensor = np.zeros(engine.np_input_shape, dtype=np.float32)
         self.predictions = []
 
     def ping(self):

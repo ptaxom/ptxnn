@@ -1,9 +1,7 @@
-try:
-    import ptxnn
-except:
-    import sys
-    sys.path.append('../build/')
-    import ptxnn
+import sys
+sys.path.append('..')
+sys.path.append('../ptxnn')
+import ptxnn
 
 import cv2
 import numpy as np
@@ -30,7 +28,7 @@ image = cv2.imread(args.input_image)
 if image is None:
     raise RuntimeError(f'Couldnt load image {args.input_image}')
 
-ptxnn.set_severity(ptxnn.kVERBOSE)
+ptxnn.set_severity(ptxnn.Severity.kVERBOSE)
 engine = ptxnn.YoloEngine("YOLO", args.path, 80, 0.3)
 
 
