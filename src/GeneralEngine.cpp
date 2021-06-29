@@ -288,3 +288,11 @@ py::tuple GeneralInferenceEngine::np_input_shape() const
         shape[i] = numpy_shapes_[0][i];
     return shape;
 }
+
+void convert_yolo(const char* cfg_path, const char* layers_folder, const char* names_path, const char* engine_name, char* mode, int batchsize)
+{
+    tk::dnn::Network *net = tk::dnn::darknetParser(cfg_path, layers_folder, names_path, mode, batchsize);
+    tk::dnn::NetworkRT *netRT = new tk::dnn::NetworkRT(net, net->getNetworkRTName(engine_name));
+    delete netRT;
+    delete net;
+}

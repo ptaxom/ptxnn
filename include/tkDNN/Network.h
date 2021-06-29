@@ -38,7 +38,7 @@ const int MAX_LAYERS = 512;
 class Network {
 
 public:
-    Network(dataDim_t input_dim);
+    Network(dataDim_t input_dim, char* mode, int batchsize);
     virtual ~Network();
     void releaseLayers();
 

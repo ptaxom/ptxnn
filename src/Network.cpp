@@ -7,7 +7,7 @@
 
 namespace tk { namespace dnn {
 
-Network::Network(dataDim_t input_dim) {
+Network::Network(dataDim_t input_dim, char* mode, int batchsize) {
     this->input_dim = input_dim;
 
     float tk_ver = float(TKDNN_VERSION)/1000;
@@ -23,21 +23,18 @@ Network::Network(dataDim_t input_dim) {
     fp16 = false;
     dla = false;
     int8 = false;
-    if(const char* env_p = std::getenv("TKDNN_MODE")) {
-        if(strcmp(env_p, "FP16") == 0)
+    if(mode) {
+        if(strcmp(mode, "FP16") == 0)
             fp16 = true;
-        else if(strcmp(env_p, "DLA") == 0) {
+        else if(strcmp(mode, "DLA") == 0) {
             dla = true;
             fp16 = true;	
         }
-        else if(strcmp(env_p, "INT8") == 0) {
+        else if(strcmp(mode, "INT8") == 0) {
             int8 = true;
         }
     }
-    maxBatchSize = 1;
-    if(const char* env_p = std::getenv("TKDNN_BATCHSIZE")) {
-        maxBatchSize = atoi(env_p);
-    }
+    maxBatchSize = batchsize;
     if(const char* env_p = std::getenv("TKDNN_CALIB_IMG_PATH"))
         fileImgList = env_p;
     

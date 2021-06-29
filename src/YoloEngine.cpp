@@ -172,4 +172,5 @@ PYBIND11_MODULE(_ptxnn, m) {
             .def("synchronize_async", &YoloEngine::synchronize_async);
 
     m.def("set_severity", &set_severity, "Set TensorRT logger severity");
+    m.def("convert_yolo", &convert_yolo, "Convert YOLO to engine file");
 }

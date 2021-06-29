@@ -1,4 +1,4 @@
-#include "tkDNN/DarknetParser.h"
+#include "DarknetParser.h"
 
 namespace tk { namespace dnn {
 
@@ -103,13 +103,6 @@ namespace tk { namespace dnn {
         return true;
     }
 
-    tk::dnn::Network *darknetAddNet(darknetFields_t &fields) {
-        //std::cout<<"Add Net: "<<fields.type<<"\n";
-        dataDim_t dim(1, fields.channels, fields.height, fields.width);
-        return new tk::dnn::Network(dim);
-    }
-
-
     void darknetAddLayer(tk::dnn::Network *net, darknetFields_t &f, std::string wgs_path, std::vector<tk::dnn::Layer*> &netLayers, const std::vector<std::string>& names) {
         if(net == nullptr)
             FatalError("Cant add a layer without a Net\n");
@@ -208,7 +201,7 @@ namespace tk { namespace dnn {
         return names;
     }
 
-    tk::dnn::Network* darknetParser(const std::string& cfg_file, const std::string& wgs_path, const std::string& names_file) {
+    tk::dnn::Network* darknetParser(const std::string& cfg_file, const std::string& wgs_path, const std::string& names_file, char* mode, int batchsize) {
 
         tk::dnn::Network *net = nullptr;
         
@@ -239,7 +232,10 @@ namespace tk { namespace dnn {
                 // end of filled type
                 if(fields.type != "") {
                     if(fields.type == "net")
-                        net = darknetAddNet(fields);
+                        {
+                            tk::dnn::dataDim_t dim__(1, fields.channels, fields.height, fields.width);
+                            net = new tk::dnn::Network(dim__, mode, batchsize);
+                        }
                     else
                         darknetAddLayer(net, fields, wgs_path, netLayers, names);
                 }

@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include "tkDNN/tkdnn.h"
+#include "tkdnn.h"
 
 namespace tk { namespace dnn {
 
@@ -42,10 +42,9 @@ namespace tk { namespace dnn {
     std::vector<int> fromStringToIntVec(const std::string& line, const char delimiter);
     
     bool darknetParseFields(const std::string& line, darknetFields_t& fields);
-    tk::dnn::Network *darknetAddNet(darknetFields_t &fields);
     void darknetAddLayer(tk::dnn::Network *net, darknetFields_t &f, std::string wgs_path, 
                          std::vector<tk::dnn::Layer*> &netLayers, const std::vector<std::string>& names);
     std::vector<std::string> darknetReadNames(const std::string& names_file);
-    tk::dnn::Network* darknetParser(const std::string& cfg_file, const std::string& wgs_path, const std::string& names_file);
+    tk::dnn::Network* darknetParser(const std::string& cfg_file, const std::string& wgs_path, const std::string& names_file, char* mode, int batchsize);
 
 }}

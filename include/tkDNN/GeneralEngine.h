@@ -23,6 +23,7 @@
 #include "NetworkRT.h"
 #include "utils.h"
 #include "NvInferPlugin.h"
+#include "DarknetParser.h"
 
 struct TRTDeleter{
     
@@ -38,6 +39,7 @@ struct TRTDeleter{
 std::ostream& operator<<(std::ostream& os, const nvinfer1::Dims& obj);
 void set_severity(int severity);
 void on_execution_end_gie(void *data);
+void convert_yolo(const char* cfg_path, const char* layers_folder, const char* names_path, const char* engine_name, char* mode, int batchsize);
 
 namespace py = pybind11;
 using NPArray = py::array_t<dnnType, py::array::c_style | py::array::forcecast>;
