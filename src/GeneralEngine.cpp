@@ -69,7 +69,11 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
     }
     tkPlugins = new tk::dnn::PluginFactory();
     deserialize(weight_path);
-    engine_batch_size_ = engineRT->hasImplicitBatchDimension() ? engineRT->getMaxBatchSize() : engineRT->getBindingDimensions(0).d[0];
+    
+    engine_batch_size_ = engineRT->getMaxBatchSize();
+    // if compiled from onnx file with explicit dim and mismatched batchsize, than smthg goes wrong
+    if (!engineRT->hasImplicitBatchDimension() && engine_batch_size_ != engineRT->getBindingDimensions(0).d[0])
+        throw std::runtime_error("Mismatched explicit batchsize and engine batchsize");
     EngineLogger.log(Severity::kINFO, "Used batchsize of", engine_batch_size_);
     
     contextRT = engineRT->createExecutionContext();
@@ -93,7 +97,10 @@ GeneralInferenceEngine::GeneralInferenceEngine(const char* model_name, const cha
                 explicit_dim.d[1 + j] = dim.d[j];
         }
         else
+        {
             explicit_dim = dim;
+            explicit_dim.d[0] = engine_batch_size_;
+        }
         std::vector<int> shape;
         for(int j = 0; j < explicit_dim.nbDims; j++)
             shape.push_back(explicit_dim.d[j]);
