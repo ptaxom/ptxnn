@@ -195,13 +195,10 @@ size_t GeneralInferenceEngine::binding_size(int index)
 size_t GeneralInferenceEngine::binding_size(Dims dim)
 {
     size_t size = sizeof(dnnType);
-    int start_id = 1;
     if (engineRT->hasImplicitBatchDimension())
-    {
-        start_id = 0;
         size *= engine_batch_size_;
-    }
-    for(int i = start_id; i < dim.nbDims; i++)
+
+    for(int i = 0; i < dim.nbDims; i++)
         size *= dim.d[i];
     return size;
 }
