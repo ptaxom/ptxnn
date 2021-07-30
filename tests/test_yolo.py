@@ -32,7 +32,7 @@ ptxnn.set_severity(ptxnn.Severity.kVERBOSE)
 engine = ptxnn.YoloEngine("YOLO", args.path, 80, 0.3)
 
 
-predict = engine.predict_image([image])
+predict = engine.predict_images([image])
 render(image, predict[0])
 print(predict[0])
 cv2.imshow('Predict', image)

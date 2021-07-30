@@ -46,12 +46,18 @@ void YoloEngine::preprocess(int index_id, const NPImage &input)
 {
     py::buffer_info input_buffer = input.request();
     uint8_t *input_ptr = static_cast<uint8_t*>(input_buffer.ptr);
-
     cv::Mat frame(input.shape(0), input.shape(1), CV_8UC3, input_ptr);
+#if defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAWARPING)
+    cv::cuda::GpuMat orig_img, img_resized;
+    orig_img = cv::cuda::GpuMat(frame);
+    cv::cuda::resize(orig_img, img_resized, cv::Size(input_dim_.d[3], input_dim_.d[2]));
+    img_resized.convertTo(imagePreproc_, CV_32FC3, 1/255.0);
+    cv::cuda::split(imagePreproc_, bgr_);
+#else
     cv::resize(frame, frame, cv::Size(input_dim_.d[3], input_dim_.d[2]));
     frame.convertTo(imagePreproc_, CV_32FC3, 1/255.0); 
     cv::split(imagePreproc_, bgr_);
-
+#endif
     for(int channel = 0; channel < 3; channel++)
     {
         checkCuda(cudaMemcpyAsync((char*)bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)bgr_[2 - channel].data, 
