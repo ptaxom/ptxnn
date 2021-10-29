@@ -60,7 +60,13 @@ void YoloEngine::preprocess(int index_id, const NPImage &input)
 #endif
     for(int channel = 0; channel < 3; channel++)
     {
-        checkCuda(cudaMemcpyAsync((char*)bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)bgr_[2 - channel].data, 
+        cv::Mat host_channel;
+        #if defined(HAVE_OPENCV_CUDAARITHM) && defined(HAVE_OPENCV_CUDAWARPING)
+            bgr_[2 - channel].download(host_channel);
+        #else
+            host_channel = bgr_[2 - channel];
+        #endif 
+        checkCuda(cudaMemcpyAsync((char*)bindingsRT[0] + index_id * sample_size_ + channel * channel_size_, (void*)host_channel.data, 
             channel_size_, cudaMemcpyHostToDevice, stream_));
     }
 }
