@@ -45,7 +45,7 @@ class AsyncYoloEngine(YoloEngine):
     async def _notifier(self):
         """Internal method to notify Future object, that execution is ended
         """
-        while asyncio.get_running_loop().is_running():
+        while asyncio.get_event_loop().is_running():
             # First block execution until tasks not enqueued 
             async with self.enqueue_condition:
                 await self.enqueue_condition.wait()
